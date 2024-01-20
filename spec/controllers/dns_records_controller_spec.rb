@@ -110,7 +110,7 @@ RSpec.describe Api::V1::DnsRecordsController, type: :controller do
         }.to_json
       end
 
-      before do
+      before :each do
         request.accept = 'application/json'
         request.content_type = 'application/json'
 
@@ -168,7 +168,7 @@ RSpec.describe Api::V1::DnsRecordsController, type: :controller do
                 count: 2,
                 hostname: sit
               }
-            ]
+            ].sort_by { |h| h[:hostname] }
           }
         end
 
@@ -193,15 +193,15 @@ RSpec.describe Api::V1::DnsRecordsController, type: :controller do
             total_records: 3,
             records: [
               {
-                id: 6,
+                id: 16,
                 ip_address: ip1
               },
               {
-                id: 8,
+                id: 18,
                 ip_address: ip3
               },
               {
-                id: 9,
+                id: 19,
                 ip_address: ip4
               }
             ],
@@ -218,7 +218,7 @@ RSpec.describe Api::V1::DnsRecordsController, type: :controller do
                 count: 1,
                 hostname: sit
               }
-            ]
+            ].sort_by { |h| h[:hostname] }
           }
         end
 
@@ -276,7 +276,7 @@ RSpec.describe Api::V1::DnsRecordsController, type: :controller do
                 count: 2,
                 hostname: sit
               }
-            ]
+            ].sort_by { |h| h[:hostname] }
           }
         end
 
@@ -319,7 +319,7 @@ RSpec.describe Api::V1::DnsRecordsController, type: :controller do
                 count: 2,
                 hostname: amet
               }
-            ]
+            ].sort_by { |h| h[:hostname] }
           }
         end
 
@@ -349,6 +349,58 @@ RSpec.describe Api::V1::DnsRecordsController, type: :controller do
   end
 
   describe '#create' do
-    # TODO
+    let(:valid_attributes) do
+      {
+        dns_records: {
+          ip: '8.8.8.8',
+          hostnames_attributes: [
+            { hostname: 'example.com' },
+            { hostname: 'test.com' }
+          ]
+        }
+      }
+    end
+
+    let(:invalid_attributes) do
+      {
+        dns_records: {
+          ip: '1.1.1.1',
+          hostnames_attributes: [
+            { hostname: '_badexample.com' }
+          ]
+        }
+      }
+    end
+
+    context 'with valid attributes' do
+      it 'creates a new DNS record' do
+        expect {
+          post :create, params: valid_attributes
+        }.to change(DnsRecord, :count).by(1)
+      end
+
+      it 'returns a created status' do
+        post :create, params: valid_attributes
+        expect(response).to have_http_status(:created)
+      end
+
+      it 'returns the id of the created record' do
+        post :create, params: valid_attributes
+        expect(JSON.parse(response.body)['id']).to eq(DnsRecord.last.id)
+      end
+    end
+
+    context 'with invalid attributes' do
+      it 'does not create a new DNS record' do
+        expect {
+          post :create, params: invalid_attributes
+        }.to_not change(DnsRecord, :count)
+      end
+
+      it 'returns an unprocessable entity status' do
+        post :create, params: invalid_attributes
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
   end
 end

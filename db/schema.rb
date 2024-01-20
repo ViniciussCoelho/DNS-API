@@ -25,13 +25,13 @@ ActiveRecord::Schema.define(version: 2024_01_20_164841) do
   end
 
   create_table "dns_records", force: :cascade do |t|
-    t.string "name"
+    t.string "ip"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end
 
   create_table "hostnames", force: :cascade do |t|
-    t.string "name"
+    t.string "hostname"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end
