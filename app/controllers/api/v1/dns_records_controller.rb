@@ -2,9 +2,18 @@ module Api
   module V1
     class DnsRecordsController < ApplicationController
       def index
-        dns_records = DnsRecord.all
+        return render json: { error: 'page param is required' }, status: :unprocessable_entity unless params[:page].present?
 
-        render json: dns_records, status: :ok
+        included = params[:included]&.split(',') || []
+        excluded = params[:excluded]&.split(',') || []
+        dns_records = dns_record_repository.dns_records_by_hostname(included: included, excluded: excluded, page: params[:page])
+        related_hostnames_data = dns_record_repository.related_hostnames(included: included, excluded: excluded, dns_records: dns_records)
+
+        render json: {
+          total_records: dns_records.total_entries,
+          records: dns_records.map { |record| { id: record.id, ip_address: record.ip } },
+          related_hostnames: related_hostnames_data.map { |hostname, count| { hostname: hostname, count: count } }
+        }
       end
 
       def create
@@ -17,6 +26,10 @@ module Api
       end
 
       private
+
+      def dns_record_repository
+        @dns_record_repository ||= DnsRecordRepository.new
+      end
 
       def dns_record_params
         params.require(:dns_records).permit(:ip, hostnames_attributes: [:hostname])
